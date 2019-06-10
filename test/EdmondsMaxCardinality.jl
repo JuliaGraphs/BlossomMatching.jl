@@ -13,7 +13,7 @@
     g = CompleteGraph(11)
     match = @inferred(max_cardinality_matching(g))
     @test match.mate == [2, 1, 4, 3, 6, 5, 8, 7, 10, 9, 0]
-    @test match.matched_edges == [1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]
+    @test match.matched_edges == [[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]
 
     g = SimpleGraph(11)
     add_edge!(g,1,2)
