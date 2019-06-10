@@ -1,8 +1,6 @@
-## max_vertices = 1000. O(n^3) algorithm won't work in short amount(<=10sec) of time if n>10^3.
-
 mutable struct AuxStruct{T} 
     mate :: Vector{T}        #mate[i] stores the vertex which is matched to vertex i  
-    p :: Vector{T}           #p[i] stores the ancestor of a vertex in the tree
+    parent :: Vector{T}      #parent[i] stores the parent of a vertex in the tree
     base :: Vector{T}        #base[i] stores the base of the flower to which vertex i belongs. It equals i if vertex i doesn't belong to any flower.
     q :: Vector{T}           #array used in traversing the tree
     used :: Vector{Bool}     #boolean array to mark used vertex
@@ -18,18 +16,16 @@ to the algorithm. PRs welcome for this.
 """
 
 function lca!(aux, a, b, nvg)
-    for i in one(nvg):nvg
-        aux.used[i] = 0
-    end
+    fill!(aux.used,false)
     
     ##Rise from vertex a to root, marking all even vertices
     while true
         a = aux.base[a]
         aux.used[a] = one(nvg)
-        if aux.mate[a] == -one(nvg) 
+        if aux.mate[a] == zero(nvg) 
             break
         end
-        a = aux.p[aux.mate[a]]
+        a = aux.parent[aux.mate[a]]
     end
       
     ##Rise from the vertex b until we find the labeled vertex
@@ -38,7 +34,7 @@ function lca!(aux, a, b, nvg)
         if aux.used[b] == one(nvg)
             return b
         end
-        b = aux.p[aux.mate[b]]
+        b = aux.parent[aux.mate[b]]
     end
 end
  
@@ -53,9 +49,9 @@ function mark_path!(aux, v, b, child, nvg)
     while aux.base[v] != b
         aux.blossom[aux.base[v]] = one(nvg)
         aux.blossom[aux.base[aux.mate[v]]] = one(nvg)
-        aux.p[v] = child
+        aux.parent[v] = child
         child = aux.mate[v]
-        v = aux.p[aux.mate[v]]
+        v = aux.parent[aux.mate[v]]
     end
     return nothing 
 end
@@ -63,12 +59,12 @@ end
 
 """
 This function looks for augmenting path from the exposed vertex root 
-and returns the last vertex of this path, or -one(nvg) if the augmenting path is not found.
+and returns the last vertex of this path, or zero(nvg) if the augmenting path is not found.
 """
 function find_path!(aux, root, nvg)
     fill!(aux.used, 0)
     
-    fill!(aux.p, -one(nvg))  
+    fill!(aux.parent, zero(nvg))  
     
     @inbounds for i in one(nvg):nvg
         aux.base[i] = i 
@@ -93,7 +89,7 @@ function find_path!(aux, root, nvg)
             # The edge closes the cycle of odd length, i.e. a flower is found. 
             # An odd-length cycle is detected when the following condition is met.
             # In this case, we need to compress the flower.
-            if (v_neighbor == root) || (aux.mate[v_neighbor] != -one(nvg)) && (aux.p[aux.mate[v_neighbor]] != -one(nvg))
+            if (v_neighbor == root) || (aux.mate[v_neighbor] != zero(nvg)) && (aux.parent[aux.mate[v_neighbor]] != zero(nvg))
                 #######Code for compressing the flower######
                 curbase = lca!(aux, v, v_neighbor, nvg)
                 for i in one(nvg):nvg
@@ -117,13 +113,13 @@ function find_path!(aux, root, nvg)
             
             # Otherwise, it is an "usual" edge, we act as in a normal wide search. 
             # The only subtlety - when checking that we have not visited this vertex yet, we must not look 
-            # into the array aux.used, but instead into the array aux.p as it is filled for the odd visited vertices.
+            # into the array aux.used, but instead into the array aux.parent as it is filled for the odd visited vertices.
             # If we did not go to the top yet, and it turned out to be unsaturated, then we found an 
             # augmenting path ending at the top v_neighbor, return it.
                 
-            elseif aux.p[v_neighbor] == -one(nvg)
-                aux.p[v_neighbor] = v
-                if aux.mate[v_neighbor] == -one(nvg) 
+            elseif aux.parent[v_neighbor] == zero(nvg)
+                aux.parent[v_neighbor] = v
+                if aux.mate[v_neighbor] == zero(nvg) 
                     return v_neighbor
                 end
                 v_neighbor = aux.mate[v_neighbor]
@@ -134,7 +130,7 @@ function find_path!(aux, root, nvg)
         end
     end
                                     
-    return -one(nvg)
+    return zero(nvg)
 end
   
 
@@ -158,6 +154,12 @@ Complexity : O(n) {Excluding the memory required for storing graph}
 n = Number of vertices
 m = Number of edges
 
+max_vertices = 1000. O(n^3) algorithm shouldn't work in short amount(<=10sec) of time if n>10^3. But because of 
+the greedy initialization of the matching in the beginning, the algorithm works in about 2 second, even for
+a CompleteGraph(10001). However this might not be the case for other such huge graphs because the greedy 
+initialization of the matching might not work for all type of graphs. Infact it is possible to create counter 
+test cases to fail the greedy intiliaztion.  
+
 ### Examples
 ```jldoctest
 
@@ -165,7 +167,7 @@ julia> g = SimpleGraph([0 1 0 ; 1 0 1; 0 1 0])
 {3, 2} undirected simple Int64 graph
 
 julia> max_cardinality_matching(g)
-(mate = [2, 1, -1], matched_edges = Array{Int64,1}[[1, 2]])
+(mate = [2, 1, 0], matched_edges = Array{Int64,1}[[1, 2]])
 
 
 julia> g=SimpleGraph(11)
@@ -194,7 +196,7 @@ julia> add_edge!(g,8,9);
 julia> add_edge!(g,10,11);
 
 julia> max_cardinality_matching(g)
-(mate = [2, 1, 4, 3, 6, 5, -1, 9, 8, 11, 10], matched_edges = Array{Int64,1}[[1, 2], [3, 4], [5, 6], [8, 9], [10, 11]])
+(mate = [2, 1, 4, 3, 6, 5, 0, 9, 8, 11, 10], matched_edges = Array{Int64,1}[[1, 2], [3, 4], [5, 6], [8, 9], [10, 11]])
 
 ```
 """
@@ -206,19 +208,19 @@ function max_cardinality_matching end
     nvg = nv(g)
     neg = ne(g)
     
-    aux = AuxStruct{T}(T[],T[],T[],T[],T[],T[])
+    aux = AuxStruct{T}(T[],T[],T[],T[],Bool[],Bool[])
 
     #Initializing vectors
-    aux.mate = fill(-one(nvg), nvg)
+    aux.mate = fill(zero(nvg), nvg)
                                 
-    aux.p = fill(-one(nvg), nvg)
+    aux.parent = fill(zero(nvg), nvg)
                                 
     sizehint!(aux.base, nvg)
     @inbounds for i in one(nvg):nvg
         push!(aux.base, i) 
     end
                                 
-    aux.q = fill(0, nvg)
+    aux.q = fill(0, 2*nvg)
                                 
     sizehint!(aux.used, nvg)
     aux.used = fill(0, nvg)
@@ -231,9 +233,9 @@ function max_cardinality_matching end
     #Better heuristic based algorithm can be used which start with near optimal matching thus reducing the number
     #of augmentating paths and thus speeding up the algorithm. PRs are welcome for this.
     @inbounds for v in one(nvg):nvg
-        if aux.mate[v]==-one(nvg)
+        if aux.mate[v]==zero(nvg)
             for v_neighbor in neighbors(g, v)
-                if aux.mate[v_neighbor]==-one(nvg)
+                if aux.mate[v_neighbor]==zero(nvg)
                     aux.mate[v_neighbor] = v
                     aux.mate[v] = v_neighbor
                     break
@@ -244,10 +246,10 @@ function max_cardinality_matching end
     
     #Iteratively going through all the vertices to find an unmarked vertex                                    
     @inbounds for u in one(nvg):nvg
-        if aux.mate[u]==-one(nvg)            # If vertex u is not in matching.
+        if aux.mate[u]==zero(nvg)            # If vertex u is not in matching.
             v = find_path!(aux, u, nvg)      # Find augmenting path starting with u as one of end points.
-            while v!=-one(nvg)               # Alternate along the path from i to last_v (whole while loop is for that).
-                pv = aux.p[v]                # Increasing the number of matched edges by alternating the edges in 
+            while v!=zero(nvg)               # Alternate along the path from i to last_v (whole while loop is for that).
+                pv = aux.parent[v]                # Increasing the number of matched edges by alternating the edges in 
                 ppv = aux.mate[pv]           # augmenting path.
                 aux.mate[v] = pv
                 aux.mate[pv] = v
