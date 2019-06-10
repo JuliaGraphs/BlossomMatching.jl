@@ -1,4 +1,4 @@
-module BlossomMatching 
+module BlossomMatching
 
 using LightGraphs 
 using SimpleTraits 
