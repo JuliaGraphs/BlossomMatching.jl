@@ -61,7 +61,7 @@ end
 This function looks for augmenting path from the exposed vertex root 
 and returns the last vertex of this path, or zero(nvg) if the augmenting path is not found.
 """
-function find_path!(aux, root, nvg)
+function find_path!(aux, root, nvg, g)
     fill!(aux.used, 0)
     
     fill!(aux.parent, zero(nvg))  
@@ -247,9 +247,9 @@ function max_cardinality_matching end
     #Iteratively going through all the vertices to find an unmarked vertex                                    
     @inbounds for u in one(nvg):nvg
         if aux.mate[u]==zero(nvg)            # If vertex u is not in matching.
-            v = find_path!(aux, u, nvg)      # Find augmenting path starting with u as one of end points.
+            v = find_path!(aux, u, nvg, g)   # Find augmenting path starting with u as one of end points.
             while v!=zero(nvg)               # Alternate along the path from i to last_v (whole while loop is for that).
-                pv = aux.parent[v]                # Increasing the number of matched edges by alternating the edges in 
+                pv = aux.parent[v]           # Increasing the number of matched edges by alternating the edges in 
                 ppv = aux.mate[pv]           # augmenting path.
                 aux.mate[v] = pv
                 aux.mate[pv] = v
