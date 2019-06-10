@@ -11,10 +11,9 @@ end
 """
 Function to calculate lowest common ancestor of 2 vertices in a tree.
 The algorithm has O(N) time complexity. 
-LCA algorithms with better time complexity e.g. O(log(N)) can be aux.used but not aux.used here as this is not of primary importance 
+LCA algorithms with better time complexity e.g. O(log(N)) can be used but not used here as this is not of primary importance 
 to the algorithm. PRs welcome for this.
 """
-
 function lca!(aux, a, b, nvg)
     fill!(aux.used,false)
     
@@ -200,7 +199,6 @@ julia> max_cardinality_matching(g)
 
 ```
 """
-
 function max_cardinality_matching end
 # see https://github.com/mauro3/SimpleTraits.jl/issues/47#issuecomment-327880153 for syntax
 @traitfn function max_cardinality_matching(g::AG::(!IsDirected)) where {T<:Integer, AG <:AbstractGraph{T}}
