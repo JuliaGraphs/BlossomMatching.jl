@@ -1,5 +1,11 @@
 module BlossomMatching
 
-greet() = print("Hello World!")
+using LightGraphs 
+using SimpleTraits 
+
+export max_cardinality_matching
+
+include("EdmondsMaxCardinality.jl")  
 
 end # module
+

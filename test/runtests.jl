@@ -1,6 +1,6 @@
 using BlossomMatching
 using Test
+using LightGraphs
+using SimpleTraits
 
-@testset "BlossomMatching.jl" begin
-    # Write your own tests here.
-end
+include("EdmondsMaxCardinality.jl")
