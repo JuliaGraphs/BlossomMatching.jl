@@ -2,7 +2,7 @@ mutable struct AuxStruct{T}
     mate :: Vector{T}        #mate[i] stores the vertex which is matched to vertex i  
     parent :: Vector{T}      #parent[i] stores the parent of a vertex in the tree
     base :: Vector{T}        #base[i] stores the base of the flower to which vertex i belongs. It equals i if vertex i doesn't belong to any flower.
-    q :: Vector{T}           #array used in traversing the tree
+    queue :: Vector{T}       #array used in traversing the tree
     used :: Vector{Bool}     #boolean array to mark used vertex
     blossom :: Vector{Bool}  #boolean array to mark vertices in a blossom
 end
@@ -14,7 +14,7 @@ The algorithm has O(N) time complexity.
 LCA algorithms with better time complexity e.g. O(log(N)) can be used but not used here as this is not of primary importance 
 to the algorithm. PRs welcome for this.
 """
-function lca!(aux, a, b, nvg)
+function lowest_common_ancestor!(aux, a, b, nvg)
     fill!(aux.used,false)
     
     ##Rise from vertex a to root, marking all even vertices
@@ -60,8 +60,10 @@ end
 This function looks for augmenting path from the exposed vertex root 
 and returns the last vertex of this path, or zero(nvg) if the augmenting path is not found.
 """
-function find_path!(aux, root, nvg, g)
-    fill!(aux.used, 0)
+function find_path!(aux, root, g)
+    nvg = nv(g)   
+
+    fill!(aux.used, 0)   
     
     fill!(aux.parent, zero(nvg))  
     
@@ -74,11 +76,11 @@ function find_path!(aux, root, nvg, g)
     qh = one(nvg) 
     qt = one(nvg)  
             
-    aux.q[qt] = root
+    aux.queue[qt] = root
     qt = qt + one(nvg)
     
     while qh<qt
-        v = aux.q[qh]
+        v = aux.queue[qh]
         qh = qh + one(nvg) 
         for v_neighbor in neighbors(g, v)
             if (aux.base[v] == aux.base[v_neighbor]) || (aux.mate[v] == v_neighbor)
@@ -90,7 +92,7 @@ function find_path!(aux, root, nvg, g)
             # In this case, we need to compress the flower.
             if (v_neighbor == root) || (aux.mate[v_neighbor] != zero(nvg)) && (aux.parent[aux.mate[v_neighbor]] != zero(nvg))
                 #######Code for compressing the flower######
-                curbase = lca!(aux, v, v_neighbor, nvg)
+                curbase = lowest_common_ancestor!(aux, v, v_neighbor, nvg)
                 for i in one(nvg):nvg
                     aux.blossom[i] = 0
                 end
@@ -103,7 +105,7 @@ function find_path!(aux, root, nvg, g)
                         aux.base[i] = curbase
                         if  aux.used[i] == 0
                             aux.used[i] = one(nvg)
-                            aux.q[qt] = i
+                            aux.queue[qt] = i
                             qt = qt + one(nvg) 
                         end
                     end
@@ -123,7 +125,7 @@ function find_path!(aux, root, nvg, g)
                 end
                 v_neighbor = aux.mate[v_neighbor]
                 aux.used[v_neighbor] = one(nvg)   
-                aux.q[qt] = v_neighbor
+                aux.queue[qt] = v_neighbor
                 qt = qt + one(nvg)
             end
         end
@@ -218,12 +220,12 @@ function max_cardinality_matching end
         push!(aux.base, i) 
     end
                                 
-    aux.q = fill(0, 2*nvg)
+    aux.queue = fill(0, 2*nvg)
                                 
     sizehint!(aux.used, nvg)
     aux.used = fill(0, nvg)
                                 
-    sizehint!(aux.blossom, nvg)
+    sizehint!(aux.blossom, nvg)                                         
     aux.blossom = fill(0, nvg)                                        
                                 
     #Using a simple greedy algorithm to mark the preliminary matching to begin with the algorithm. This speeds up 
@@ -245,7 +247,7 @@ function max_cardinality_matching end
     #Iteratively going through all the vertices to find an unmarked vertex                                    
     @inbounds for u in one(nvg):nvg
         if aux.mate[u]==zero(nvg)            # If vertex u is not in matching.
-            v = find_path!(aux, u, nvg, g)   # Find augmenting path starting with u as one of end points.
+            v = find_path!(aux, u, g)        # Find augmenting path starting with u as one of end points.
             while v!=zero(nvg)               # Alternate along the path from i to last_v (whole while loop is for that).
                 pv = aux.parent[v]           # Increasing the number of matched edges by alternating the edges in 
                 ppv = aux.mate[pv]           # augmenting path.
@@ -256,7 +258,7 @@ function max_cardinality_matching end
         end
     end
        
-    matched_edges = Vector{Vector{T}}()       # Result vector containing end points of matched edges.
+    matched_edges = Vector{Vector{T}}()      # Result vector containing end points of matched edges.
 
     @inbounds for u in one(nvg):nvg
         if u<aux.mate[u]
