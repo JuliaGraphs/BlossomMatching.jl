@@ -6,4 +6,6 @@ function min_cost_perfect_matching end
      UpdtatePrimal()
      UpdateDual()
      CheckComplementarySlacknessCondition()
+     CheckCorrectnessOfSolution()
+     return matching
 end
