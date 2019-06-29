@@ -1,5 +1,5 @@
-mutable struct{U}
-    ""
+mutable struct blossomVnode{U}
+    "" 
     True if this node is a tree root, implies that this node is outer and isn't matched.
     ""
     is_tree_root :: Bool
