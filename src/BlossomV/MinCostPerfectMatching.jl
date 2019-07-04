@@ -4,9 +4,8 @@ function min_cost_perfect_matching end
 @traitfn function min_cost_perfect_matching(g::AG::(!IsDirected)) where {T<:Integer, AG <:AbstractGraph{T}}
      nvg = nv(g)
 
-     if nvg%2 
-         throwException(No perfect matching)
-     end
+     if nvg % 2 != 0 
+         throw(ArgumentError("Odd number of vertices $nvg, no perfect matching"))
 
      Init()
 
