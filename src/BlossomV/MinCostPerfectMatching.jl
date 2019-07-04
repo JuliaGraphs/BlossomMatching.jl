@@ -6,7 +6,8 @@ function min_cost_perfect_matching end
 
      if nvg % 2 != 0 
          throw(ArgumentError("Odd number of vertices $nvg, no perfect matching"))
-
+     end
+     
      Init()
 
      while(1)
